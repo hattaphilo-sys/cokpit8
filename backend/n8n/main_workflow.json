@@ -1,0 +1,87 @@
+{
+  "name": "C0KPIT Main Workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "project-created",
+        "options": {}
+      },
+      "name": "Webhook: Project Created",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        100,
+        100
+      ],
+      "webhookId": "project-created-webhook"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "invoice-requested",
+        "options": {}
+      },
+      "name": "Webhook: Invoice Requested",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        100,
+        300
+      ],
+      "webhookId": "invoice-requested-webhook"
+    },
+    {
+      "parameters": {
+        "subject": "Invitation to C0KPIT",
+        "text": "You have been invited to a new project. Click here: {{ $json.inviteUrl }}",
+        "toEmail": "={{ $json.email }}"
+      },
+      "name": "Send Email (Mock)",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 1,
+      "position": [
+        300,
+        100
+      ]
+    },
+     {
+      "parameters": {
+        "subject": "New Invoice",
+        "text": "A new invoice for {{ $json.amount }} is available.",
+        "toEmail": "={{ $json.clientEmail }}"
+      },
+      "name": "Send Invoice Email (Mock)",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 1,
+      "position": [
+        300,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook: Project Created": {
+      "main": [
+        [
+          {
+            "node": "Send Email (Mock)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+     "Webhook: Invoice Requested": {
+      "main": [
+        [
+          {
+            "node": "Send Invoice Email (Mock)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

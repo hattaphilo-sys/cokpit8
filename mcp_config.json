@@ -1,0 +1,36 @@
+{
+  "mcpServers": {
+    "filesystem": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
+        "/Users/hatakentaro/antigravity/cokpit8"
+      ],
+      "permissions": ["read", "write"]
+    },
+    "fetch": {
+      "command": "uvx",
+      "args": ["mcp-server-fetch"],
+      "permissions": ["network"]
+    },
+    "brave-search": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-brave-search"],
+      "env": {
+        "BRAVE_API_KEY": "${BRAVE_API_KEY}"
+      },
+      "permissions": ["network"]
+    },
+    "convex": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-convex"],
+      "permissions": ["network"]
+    }
+  },
+  "agentPermissions": {
+    "frontend-agent": ["filesystem"],
+    "backend-agent": ["filesystem", "fetch", "convex"],
+    "integration-agent": ["filesystem", "fetch", "brave-search", "convex"]
+  }
+}

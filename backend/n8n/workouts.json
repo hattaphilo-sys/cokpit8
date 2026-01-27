@@ -1,0 +1,103 @@
+{
+  "name": "C0KPIT Automation Workflows",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "invite-client",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "name": "Webhook: Invite Client",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "fromEmail": "admin@cokpit.dev",
+        "toEmail": "={{$json.body.email}}",
+        "subject": "You have been invited to C0KPIT",
+        "text": "Welcome! You have been invited to project {{$json.body.projectTitle}}. Login here: https://cokpit.dev/login",
+        "html": "<h1>Welcome!</h1><p>You have been invited to project <b>{{$json.body.projectTitle}}</b>.</p><a href='https://cokpit.dev/login'>Login to Dashboard</a>"
+      },
+      "name": "Email: Send Invitation",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 1,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "path": "create-invoice",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "name": "Webhook: Create Invoice",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [460, 500]
+    },
+    {
+      "parameters": {
+        "amount": "={{$json.body.amount}}",
+        "currency": "jpy",
+        "customer": "={{$json.body.clientEmail}}"
+      },
+      "name": "Stripe: Create Invoice",
+      "type": "n8n-nodes-base.stripe",
+      "typeVersion": 1,
+      "position": [680, 500],
+      "notes": "Mock: Returns { paymentLink: 'https://stripe.com/...' }"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.convex.dev/api/mutation",
+        "bodyParametersUi": {
+          "parameter": [
+            { "name": "path", "value": "api.invoices.updateLink" },
+            { "name": "args", "value": "={{ { invoiceId: $json.body.invoiceId, link: $json.paymentLink } }}" }
+          ]
+        }
+      },
+      "name": "Convex: Update Invoice Link",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [900, 500]
+    }
+  ],
+  "connections": {
+    "Webhook: Invite Client": {
+      "main": [
+        [
+          {
+            "node": "Email: Send Invitation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook: Create Invoice": {
+      "main": [
+        [
+          {
+            "node": "Stripe: Create Invoice",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Stripe: Create Invoice": {
+      "main": [
+        [
+          {
+            "node": "Convex: Update Invoice Link",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
