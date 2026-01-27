@@ -1,7 +1,6 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { GlassCard } from "@/components/ui/glass-card";
 import { KanbanBoard } from "@/components/ui/kanban-board";
 import { MOCK_TASKS } from "@/lib/mock-data";
 
