@@ -11,7 +11,7 @@ export const list = query({
         
         return await ctx.db
             .query("files")
-            .withIndex("by_projectId", (q) => q.eq("projectId", args.projectId))
+            .withIndex("by_projectId", (q: any) => q.eq("projectId", args.projectId))
             .collect();
     }
 });

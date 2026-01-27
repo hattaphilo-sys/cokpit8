@@ -8,7 +8,7 @@ async function requireAdmin(ctx: any) {
   if (!identity) throw new Error("Unauthenticated");
   const user = await ctx.db
     .query("users")
-    .withIndex("by_clerkId", (q) => q.eq("clerkId", identity.subject))
+    .withIndex("by_clerkId", (q: any) => q.eq("clerkId", identity.subject))
     .unique();
   if (!user || user.role !== "admin") throw new Error("Unauthorized: Admin only");
   return user;
@@ -32,7 +32,7 @@ export const getByUser = query({
     // Check requester
     const requester = await ctx.db
         .query("users")
-        .withIndex("by_clerkId", (q) => q.eq("clerkId", identity.subject))
+        .withIndex("by_clerkId", (q: any) => q.eq("clerkId", identity.subject))
         .unique();
     if (!requester) return null;
 
@@ -44,7 +44,7 @@ export const getByUser = query({
     // Fetch project
     const project = await ctx.db
       .query("projects")
-      .withIndex("by_clientId", (q) => q.eq("clientId", args.userId))
+      .withIndex("by_clientId", (q: any) => q.eq("clientId", args.userId))
       .first(); // Assuming 1 project per client for now based on contract return type
       
     return project;
@@ -60,7 +60,7 @@ export const create = mutation({
     // Find or Invite User
     let user = await ctx.db
       .query("users")
-      .filter((q) => q.eq(q.field("email"), args.clientEmail))
+      .filter((q: any) => q.eq(q.field("email"), args.clientEmail))
       .first();
 
     if (!user) {

@@ -43,22 +43,81 @@ export interface File {
   thumbnailUrl?: string;
 }
 
-export const MOCK_USER: User = {
-  _id: "user_client_1",
-  name: "Alice Client",
-  email: "alice@example.com",
-  role: "client",
-  avatarUrl: "https://github.com/shadcn.png"
-};
 
-export const MOCK_PROJECT: Project = {
-  _id: "proj_1",
-  clientId: "user_client_1",
-  title: "C0KPIT Dashboard Redesign",
-  status: "design", // Phase 4
-  isPaymentPending: true, // Enable payment modal for demo
-  createdAt: Date.now() - 86400000 * 5
-};
+export const MOCK_USERS: User[] = [
+  {
+    _id: "user_client_1",
+    name: "Alice Client",
+    email: "alice@example.com",
+    role: "client",
+    avatarUrl: "https://github.com/shadcn.png"
+  },
+  {
+    _id: "user_client_2",
+    name: "Bob Anderson",
+    email: "bob@techcorp.com",
+    role: "client",
+  },
+  {
+    _id: "user_client_3",
+    name: "Carol Martinez",
+    email: "carol@startup.io",
+    role: "client",
+  },
+  {
+    _id: "user_admin_1",
+    name: "Admin User",
+    email: "admin@cokpit.com",
+    role: "admin",
+  }
+];
+
+export const MOCK_USER: User = MOCK_USERS[0]; // For backward compatibility
+
+export const MOCK_PROJECTS: Project[] = [
+  {
+    _id: "proj_1",
+    clientId: "user_client_1",
+    title: "C0KPIT Dashboard Redesign",
+    status: "design", // Phase 4
+    isPaymentPending: true,
+    createdAt: Date.now() - 86400000 * 5
+  },
+  {
+    _id: "proj_2",
+    clientId: "user_client_2",
+    title: "E-commerce Platform MVP",
+    status: "wireframe", // Phase 3
+    isPaymentPending: false,
+    createdAt: Date.now() - 86400000 * 12
+  },
+  {
+    _id: "proj_3",
+    clientId: "user_client_3",
+    title: "Mobile App Design System",
+    status: "concept", // Phase 2
+    isPaymentPending: false,
+    createdAt: Date.now() - 86400000 * 3
+  },
+  {
+    _id: "proj_4",
+    clientId: "user_client_1",
+    title: "Brand Identity Package",
+    status: "delivery", // Phase 5
+    isPaymentPending: false,
+    createdAt: Date.now() - 86400000 * 30
+  },
+  {
+    _id: "proj_5",
+    clientId: "user_client_2",
+    title: "SaaS Dashboard UI",
+    status: "hearing", // Phase 1
+    isPaymentPending: false,
+    createdAt: Date.now() - 86400000 * 1
+  }
+];
+
+export const MOCK_PROJECT: Project = MOCK_PROJECTS[0]; // For backward compatibility
 
 export const MOCK_TASKS: Task[] = [
   { 

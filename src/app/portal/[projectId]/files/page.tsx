@@ -4,18 +4,18 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { GlassCard } from "@/components/ui/glass-card";
 import { FileUpload } from "@/components/ui/file-upload";
-import { MOCK_FILES, MOCK_USER, File } from "@/lib/mock-data";
+import { MOCK_FILES, MOCK_USER, File as MockFile } from "@/lib/mock-data";
 import { FileText, Download, User, Calendar, Upload as UploadIcon } from "lucide-react";
 
 export default function FilesPage() {
-  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
+  const [uploadedFiles, setUploadedFiles] = useState<MockFile[]>([]);
   const sharedFiles = MOCK_FILES.filter(f => f.category === "shared_file");
   const allFiles = [...sharedFiles, ...uploadedFiles];
 
   const handleFileUpload = (files: File[]) => {
     console.log("Files uploaded:", files);
     // Mock: Convert to our File type
-    const mockFiles: File[] = files.map((file, index) => ({
+    const mockFiles: MockFile[] = files.map((file, index) => ({
       _id: `temp_${Date.now()}_${index}`,
       projectId: "proj_1",
       name: file.name,
@@ -37,7 +37,7 @@ export default function FilesPage() {
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
 
-  const getFileIcon = (type: File["type"]) => {
+  const getFileIcon = (type: MockFile["type"]) => {
     const iconClass = "w-8 h-8";
     switch (type) {
       case "pdf":

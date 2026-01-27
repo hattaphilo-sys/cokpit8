@@ -7,7 +7,7 @@ async function isAuthenticated(ctx: any) {
     if (!identity) throw new Error("Unauthenticated");
     const user = await ctx.db
         .query("users")
-        .withIndex("by_clerkId", (q) => q.eq("clerkId", identity.subject))
+        .withIndex("by_clerkId", (q: any) => q.eq("clerkId", identity.subject))
         .unique();
     if (!user) throw new Error("User not found");
     return user;
@@ -30,7 +30,7 @@ export const list = query({
 
         return await ctx.db
             .query("tasks")
-            .withIndex("by_projectId", (q) => q.eq("projectId", args.projectId))
+            .withIndex("by_projectId", (q: any) => q.eq("projectId", args.projectId))
             .collect();
     },
 });
