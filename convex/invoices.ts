@@ -7,7 +7,7 @@ async function requireAdmin(ctx: any) {
     if (!identity) throw new Error("Unauthenticated");
     const user = await ctx.db
       .query("users")
-      .withIndex("by_clerkId", (q) => q.eq("clerkId", identity.subject))
+      .withIndex("by_clerkId", (q: any) => q.eq("clerkId", identity.subject))
       .unique();
     if (!user || user.role !== "admin") throw new Error("Unauthorized: Admin only");
     return user;
