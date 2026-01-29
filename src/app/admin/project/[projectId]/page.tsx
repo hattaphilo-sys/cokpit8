@@ -422,7 +422,7 @@ export default function AdminProjectDetailPage() {
                             <button 
                                 onClick={(e) => {
                                    e.stopPropagation();
-                                   handleCopyLink(file.url);
+                                   handleCopyLink(file._id, file.url);
                                 }}
                                 className="p-2 hover:text-white text-white/60 transition-colors relative z-20"
                                 title="Copy Link"
@@ -433,7 +433,7 @@ export default function AdminProjectDetailPage() {
                               <button 
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    handleDownload(file.url, file.name, file.type);
+                                    handleDownload(file);
                                   }}
                                   className="p-2 hover:text-white text-white/60 transition-colors relative z-20"
                                   title="Download"

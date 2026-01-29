@@ -46,7 +46,7 @@ export default function PortalHomePage() {
   // Filter data
   const recentTasks = tasks.slice(0, 3);
   const recentArtifacts = files.filter(f => f.category === "artifact").slice(0, 2);
-  const recentSharedFiles = files.filter(f => f.category === "shared_file").slice(0, 3);
+  const recentSharedFiles = files.filter(f => f.category === "general").slice(0, 3);
 
   // Helper function to format file size
   const formatFileSize = (bytes: number) => {
@@ -179,7 +179,7 @@ export default function PortalHomePage() {
                     </div>
                     <div>
                       <p className="text-white text-sm font-medium">{file.name}</p>
-                      <p className="text-white/40 text-xs">{formatFileSize(file.size)}</p>
+                      <p className="text-white/40 text-xs">{formatFileSize(file.size || 0)}</p>
                     </div>
                   </div>
                   <Download className="w-4 h-4 text-white/40 group-hover:text-white transition-colors" />
@@ -223,7 +223,7 @@ export default function PortalHomePage() {
                       </p>
                     </div>
                   </div>
-                  <span className="text-xs text-white/40">{formatFileSize(file.size)}</span>
+                  <span className="text-xs text-white/40">{formatFileSize(file.size || 0)}</span>
                 </div>
               ))}
             </div>
@@ -259,7 +259,7 @@ export default function PortalHomePage() {
               <div className="flex items-center justify-between">
                 <span className="text-white/60 text-sm">Shared Files</span>
                 <span className="text-cyan-400 font-semibold">
-                  {files.filter(f => f.category === "shared_file").length}
+                  {files.filter(f => f.category === "general").length}
                 </span>
               </div>
               
