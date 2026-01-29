@@ -6,13 +6,13 @@ export const fixFileCategories = mutation({
     const files = await ctx.db.query("files").collect();
     let count = 0;
     for (const file of files) {
-      // @ts-ignore
-      if (file.category === "shared_file") {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      if ((file as any).category === "shared_file") {
         await ctx.db.patch(file._id, { category: "general" });
         count++;
       } 
-      // @ts-ignore
-      else if (file.category === "deliverable") {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      else if ((file as any).category === "deliverable") {
         await ctx.db.patch(file._id, { category: "artifact" });
         count++;
       }

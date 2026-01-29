@@ -29,7 +29,7 @@ export default function NewProjectPage() {
         clientEmail,
       });
       router.push(`/admin/project/${projectId}`);
-    } catch (err: any) {
+    } catch (err: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
       console.error(err);
       setError(err.message || "Failed to create project");
     } finally {
@@ -81,7 +81,7 @@ export default function NewProjectPage() {
                 className="w-full bg-white/5 border border-white/10 rounded-lg p-3 text-white focus:outline-none focus:border-blue-500/50 transition-colors placeholder:text-white/20"
               />
               <p className="text-white/30 text-xs mt-2">
-                An invitation will be sent to this email address if they don't have an account.
+                An invitation will be sent to this email address if they don&apos;t have an account.
               </p>
             </div>
 

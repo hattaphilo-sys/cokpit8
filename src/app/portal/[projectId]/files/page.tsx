@@ -1,4 +1,5 @@
 "use client";
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { useState } from "react";
 import { useParams } from "next/navigation";
@@ -7,7 +8,7 @@ import { GlassCard } from "@/components/ui/glass-card";
 import { FileUploadModal } from "@/components/admin/FileUploadModal"; 
 import { useQuery, useMutation, useConvexAuth } from "convex/react";
 import { api } from "../../../../../convex/_generated/api";
-import { Id, Doc } from "../../../../../convex/_generated/dataModel";
+import { Id } from "../../../../../convex/_generated/dataModel";
 import { FileText, Download, CheckCircle2, XCircle, Clock, Plus, UploadCloud, Link2, Eye, Trash2, Loader2 } from "lucide-react";
 import { RedirectToSignIn } from "@clerk/nextjs";
 import Link from "next/link";

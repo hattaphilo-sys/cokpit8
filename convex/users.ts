@@ -10,6 +10,7 @@ export const current = query({
     }
     const user = await ctx.db
       .query("users")
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .withIndex("by_clerkId", (q: any) => q.eq("clerkId", identity.subject))
       .unique();
     return user;

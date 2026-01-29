@@ -2,11 +2,13 @@ import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
 import { internal } from "./_generated/api";
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function requireAdmin(ctx: any) {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) throw new Error("Unauthenticated");
     const user = await ctx.db
       .query("users")
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .withIndex("by_clerkId", (q: any) => q.eq("clerkId", identity.subject))
       .unique();
     if (!user || user.role !== "admin") throw new Error("Unauthorized: Admin only");
@@ -30,7 +32,7 @@ export const create = mutation({
         // I'll stick to Schema.
     },
     handler: async (ctx, args) => {
-        const admin = await requireAdmin(ctx);
+        await requireAdmin(ctx);
         const project = await ctx.db.get(args.projectId);
         if (!project) throw new Error("Project not found");
 
@@ -69,6 +71,7 @@ export const getPending = query({
     handler: async (ctx, args) => {
         const invoice = await ctx.db
             .query("invoices")
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             .withIndex("by_projectId", (q: any) => q.eq("projectId", args.projectId))
             .filter((q) => q.eq(q.field("status"), "pending"))
             .first();

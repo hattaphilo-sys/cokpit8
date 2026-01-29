@@ -1,5 +1,5 @@
 import { mutation } from "./_generated/server";
-import { v } from "convex/values";
+// import { v } from "convex/values";
 import { MOCK_USERS, MOCK_PROJECTS, MOCK_TASKS, MOCK_FILES, MOCK_INVOICE } from "../src/lib/mock-data";
 
 export const seed = mutation({
@@ -10,7 +10,9 @@ export const seed = mutation({
     // However, for simplicity in this task, I will just insert. 
     // Ideally we should use a "reset" flag or something.
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const userIdMap = new Map<string, any>();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const projectIdMap = new Map<string, any>();
 
     // 2. Insert Users
@@ -85,6 +87,7 @@ export const seed = mutation({
         await ctx.db.insert("files", {
             projectId: realProjectId,
             name: mockFile.name,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             category: (mockFile.category as any) === "deliverable" || (mockFile.category as any) === "artifact" ? "artifact" : "general",
             type: mockFile.type,
             size: mockFile.size,

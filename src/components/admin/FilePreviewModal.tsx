@@ -129,6 +129,7 @@ export function FilePreviewModal({ isOpen, onClose, file }: FilePreviewModalProp
             {/* Content */}
             <div className="flex-1 overflow-hidden bg-black/20 flex items-center justify-center relative">
                {isImage ? (
+                 // eslint-disable-next-line @next/next/no-img-element
                  <img 
                    src={file.url} 
                    alt={file.name} 

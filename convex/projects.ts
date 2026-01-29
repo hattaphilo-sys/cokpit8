@@ -3,11 +3,13 @@ import { v } from "convex/values";
 import { internal } from "./_generated/api";
 
 // --- Helpers ---
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function isAuthenticated(ctx: { auth: { getUserIdentity: () => Promise<any> }, db: any }) {
   const identity = await ctx.auth.getUserIdentity();
   if (!identity) throw new Error("Unauthenticated");
   const user = await ctx.db
     .query("users")
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     .withIndex("by_clerkId", (q: any) => q.eq("clerkId", identity.subject))
     .unique();
   if (!user) throw new Error("User not found");
