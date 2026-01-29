@@ -4,7 +4,9 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { GlassCard } from "@/components/ui/glass-card";
 import { BentoGrid, BentoGridItem } from "@/components/ui/bento-grid";
-import { MOCK_PROJECTS, MOCK_USERS } from "@/lib/mock-data";
+import { useQuery, useConvexAuth } from "convex/react";
+import { api } from "../../../../convex/_generated/api";
+import { MOCK_USERS } from "@/lib/mock-data";
 import { 
   FolderKanban, 
   Users, 
@@ -15,27 +17,38 @@ import {
   ArrowRight
 } from "lucide-react";
 import Link from "next/link";
+import { RedirectToSignIn } from "@clerk/nextjs";
 
 export default function AdminDashboardPage() {
+  const { isAuthenticated, isLoading } = useConvexAuth();
+  const projects = useQuery(api.projects.list, isAuthenticated ? {} : "skip") || [];
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
 
+  if (isLoading) {
+    return <div className="min-h-screen flex items-center justify-center text-white">Loading...</div>;
+  }
+
+  if (!isAuthenticated) {
+    return <RedirectToSignIn />;
+  }
+
   // Statistics
-  const totalProjects = MOCK_PROJECTS.length;
-  const activeProjects = MOCK_PROJECTS.filter(p => 
+  const totalProjects = projects.length;
+  const activeProjects = projects.filter(p => 
     !["delivery"].includes(p.status)
   ).length;
-  const completedProjects = MOCK_PROJECTS.filter(p => 
+  const completedProjects = projects.filter(p => 
     p.status === "delivery"
   ).length;
-  const pendingPayments = MOCK_PROJECTS.filter(p => 
+  const pendingPayments = projects.filter(p => 
     p.isPaymentPending
   ).length;
   const totalClients = MOCK_USERS.filter(u => u.role === "client").length;
 
   // Filter projects
   const filteredProjects = selectedStatus === "all" 
-    ? MOCK_PROJECTS 
-    : MOCK_PROJECTS.filter(p => p.status === selectedStatus);
+    ? projects 
+    : projects.filter(p => p.status === selectedStatus);
 
   const getStatusColor = (status: string) => {
     const colors = {
@@ -268,7 +281,7 @@ export default function AdminDashboardPage() {
           <h2 className="text-2xl font-light text-white mb-4">Clients</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {MOCK_USERS.filter(u => u.role === "client").map((client, index) => {
-              const clientProjects = MOCK_PROJECTS.filter(p => p.clientId === client._id);
+              const clientProjects = projects.filter(p => p.clientId === client._id);
               return (
                 <motion.div
                   key={client._id}

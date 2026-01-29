@@ -3,76 +3,87 @@ import { v } from "convex/values";
 import { internal } from "./_generated/api";
 
 // --- Helpers ---
-async function requireAdmin(ctx: any) {
+async function isAuthenticated(ctx: { auth: { getUserIdentity: () => Promise<any> }, db: any }) {
   const identity = await ctx.auth.getUserIdentity();
   if (!identity) throw new Error("Unauthenticated");
   const user = await ctx.db
     .query("users")
     .withIndex("by_clerkId", (q: any) => q.eq("clerkId", identity.subject))
     .unique();
-  if (!user || user.role !== "admin") throw new Error("Unauthorized: Admin only");
+  if (!user) throw new Error("User not found");
   return user;
 }
 
 // --- Queries ---
-export const listAdmin = query({
-  args: {},
-  handler: async (ctx) => {
-    await requireAdmin(ctx);
-    return await ctx.db.query("projects").collect();
+
+// api.projects.list(userId?: Id<"users">)
+export const list = query({
+  args: { userId: v.optional(v.id("users")) },
+  handler: async (ctx, args) => {
+    const user = await isAuthenticated(ctx);
+
+    if (user.role === "admin") {
+      if (args.userId) {
+        // Admin filtering by specific user
+        return await ctx.db
+          .query("projects")
+          .withIndex("by_client", (q) => q.eq("clientId", args.userId!))
+          .collect();
+      } else {
+        // Admin viewing all
+        return await ctx.db.query("projects").collect();
+      }
+    } else {
+      // Client: Can only see own projects
+      // We ignore args.userId or could error if they try to see others, but returning own is safer/easier default
+      return await ctx.db
+        .query("projects")
+        .withIndex("by_client", (q) => q.eq("clientId", user._id))
+        .collect();
+    }
   },
 });
 
-export const getByUser = query({
-  args: { userId: v.id("users") },
+// api.projects.get(projectId)
+export const get = query({
+  args: { projectId: v.id("projects") },
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) return null;
-    
-    // Check requester
-    const requester = await ctx.db
-        .query("users")
-        .withIndex("by_clerkId", (q: any) => q.eq("clerkId", identity.subject))
-        .unique();
-    if (!requester) return null;
+    const user = await isAuthenticated(ctx);
+    const project = await ctx.db.get(args.projectId);
 
-    // Allow Admin or the user themselves
-    if (requester.role !== "admin" && requester._id !== args.userId) {
-        throw new Error("Unauthorized");
+    if (!project) return null;
+
+    if (user.role !== "admin" && project.clientId !== user._id) {
+      throw new Error("Unauthorized");
     }
 
-    // Fetch project
-    const project = await ctx.db
-      .query("projects")
-      .withIndex("by_clientId", (q: any) => q.eq("clientId", args.userId))
-      .first(); // Assuming 1 project per client for now based on contract return type
-      
     return project;
   },
 });
 
 // --- Mutations ---
+
 export const create = mutation({
   args: { title: v.string(), clientEmail: v.string() },
   handler: async (ctx, args) => {
-    const admin = await requireAdmin(ctx);
+    const requester = await isAuthenticated(ctx);
+    if (requester.role !== "admin") throw new Error("Admin only");
 
     // Find or Invite User
     let user = await ctx.db
       .query("users")
-      .filter((q: any) => q.eq(q.field("email"), args.clientEmail))
+      .withIndex("by_email", (q) => q.eq("email", args.clientEmail))
       .first();
 
     if (!user) {
-        // Create placeholder user
-        // Note: clerkId is required. We use a temp placeholder until they sign up/we link them.
-        const tempClerkId = `invited_${Date.now()}`;
+        // Create placeholder user (invited)
+        // clerkId is optional now in schema, so we can omit it or use undefined
         const userId = await ctx.db.insert("users", {
-            clerkId: tempClerkId,
             email: args.clientEmail,
             role: "client",
             name: "Invited Client",
             avatarUrl: "",
+            // clerkId left undefined
         });
         user = (await ctx.db.get(userId))!;
     }
@@ -86,11 +97,10 @@ export const create = mutation({
     });
 
     // Trigger n8n
-    // We use internal scheduler to call the action
     await ctx.scheduler.runAfter(0, internal.actions_n8n.sendProjectCreatedWebhook, {
         email: args.clientEmail,
         projectId: projectId,
-        inviteUrl: "https://tbd.com",
+        inviteUrl: "https://tbd.com", // This should probably be generated dynamically
     });
 
     return projectId;
@@ -109,7 +119,18 @@ export const updateStatus = mutation({
         ) 
     },
     handler: async (ctx, args) => {
-      await requireAdmin(ctx);
+      const user = await isAuthenticated(ctx);
+      if (user.role !== "admin") throw new Error("Admin only");
+      
       await ctx.db.patch(args.projectId, { status: args.status });
+
+      // Log Activity
+      await ctx.runMutation(internal.activities.log, {
+        projectId: args.projectId,
+        action: "project_status_updated",
+        entityId: args.projectId,
+        entityName: `Status changed to ${args.status.toUpperCase()}`,
+        userId: user._id,
+      });
     },
   });

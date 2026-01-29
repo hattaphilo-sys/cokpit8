@@ -33,7 +33,7 @@ export default function Home() {
           Experience technical elegance.
         </motion.div>
         
-        <Link href="/portal/proj_1">
+        <Link href="/admin/dashboard">
           <ShimmerButton className="mt-8">
             Enter Cockpit
           </ShimmerButton>

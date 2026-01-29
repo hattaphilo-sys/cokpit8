@@ -7,6 +7,8 @@ import { cn } from "@/lib/utils";
 
 interface KanbanBoardProps {
   tasks: Task[];
+  onStatusChange?: (taskId: string, newStatus: TaskStatus) => void;
+  onTaskClick?: (task: Task) => void;
 }
 
 const COLUMNS: { id: TaskStatus; label: string; color: string }[] = [
@@ -16,7 +18,23 @@ const COLUMNS: { id: TaskStatus; label: string; color: string }[] = [
   { id: "done", label: "Done", color: "from-green-500/20 to-emerald-500/20" },
 ];
 
-export const KanbanBoard = ({ tasks }: KanbanBoardProps) => {
+export const KanbanBoard = ({ tasks, onStatusChange, onTaskClick }: KanbanBoardProps) => {
+  const handleDragStart = (e: React.DragEvent, taskId: string) => {
+    e.dataTransfer.setData("taskId", taskId);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+  };
+
+  const handleDrop = (e: React.DragEvent, status: TaskStatus) => {
+    e.preventDefault();
+    const taskId = e.dataTransfer.getData("taskId");
+    if (taskId && onStatusChange) {
+      onStatusChange(taskId, status);
+    }
+  };
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
       {COLUMNS.map((column, colIndex) => {
@@ -29,6 +47,8 @@ export const KanbanBoard = ({ tasks }: KanbanBoardProps) => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: colIndex * 0.1 }}
             className="flex flex-col gap-4"
+            onDragOver={handleDragOver}
+            onDrop={(e) => handleDrop(e, column.id)}
           >
             {/* Column Header */}
             <div className="flex items-center justify-between">
@@ -41,7 +61,7 @@ export const KanbanBoard = ({ tasks }: KanbanBoardProps) => {
             </div>
 
             {/* Column Cards */}
-            <div className="space-y-3 min-h-[200px]">
+            <div className="space-y-3 min-h-[200px] h-full rounded-xl transition-colors hover:bg-white/5 p-2 -m-2">
               {columnTasks.map((task, taskIndex) => (
                 <motion.div
                   key={task._id}
@@ -49,10 +69,16 @@ export const KanbanBoard = ({ tasks }: KanbanBoardProps) => {
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ duration: 0.3, delay: taskIndex * 0.05 }}
                 >
+                  <div
+                    draggable
+                    onDragStart={(e) => handleDragStart(e, task._id)}
+                    onClick={() => onTaskClick?.(task)}
+                    className="cursor-move cursor-pointer"
+                  >
                   <GlassCard 
                     className={cn(
-                      "p-4 cursor-pointer group",
-                      "hover:shadow-[0_0_30px_rgba(168,85,247,0.3)]", // Neon glow on hover (rule L52)
+                      "p-4 group",
+                      "hover:shadow-[0_0_30px_rgba(168,85,247,0.3)]",
                       "transition-all duration-300"
                     )}
                     neon
@@ -88,12 +114,13 @@ export const KanbanBoard = ({ tasks }: KanbanBoardProps) => {
                       column.color
                     )} />
                   </GlassCard>
+                 </div>
                 </motion.div>
               ))}
               
               {/* Empty State */}
               {columnTasks.length === 0 && (
-                <div className="flex items-center justify-center h-32 border-2 border-dashed border-white/10 rounded-xl">
+                <div className="flex items-center justify-center h-32 border-2 border-dashed border-white/10 rounded-xl pointer-events-none">
                   <p className="text-white/30 text-xs">No tasks</p>
                 </div>
               )}

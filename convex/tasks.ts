@@ -1,5 +1,6 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
+import { internal } from "./_generated/api";
 
 // Helper for auth checks
 async function isAuthenticated(ctx: any) {
@@ -18,19 +19,16 @@ export const list = query({
     handler: async (ctx, args) => {
         const user = await isAuthenticated(ctx);
         const project = await ctx.db.get(args.projectId);
-        if (!project) return []; // or throw
+        if (!project) return [];
 
-        // Admin or Owner
         const isOwner = project.clientId === user._id;
         const isAdmin = user.role === "admin";
         
-        if (!isOwner && !isAdmin) {
-             throw new Error("Unauthorized");
-        }
+        if (!isOwner && !isAdmin) throw new Error("Unauthorized");
 
         return await ctx.db
             .query("tasks")
-            .withIndex("by_projectId", (q: any) => q.eq("projectId", args.projectId))
+            .withIndex("by_project", (q: any) => q.eq("projectId", args.projectId))
             .collect();
     },
 });
@@ -43,14 +41,32 @@ export const create = mutation({
     },
     handler: async (ctx, args) => {
         const user = await isAuthenticated(ctx);
-        if (user.role !== "admin") throw new Error("Admin only");
+        const project = await ctx.db.get(args.projectId);
+        if (!project) throw new Error("Project not found");
 
-        await ctx.db.insert("tasks", {
+        const isOwner = project.clientId === user._id;
+        const isAdmin = user.role === "admin";
+
+        if (!isAdmin && !isOwner) throw new Error("Unauthorized");
+
+        const taskId = await ctx.db.insert("tasks", {
             projectId: args.projectId,
             title: args.title,
             status: args.status,
-            tags: [], // Default empty
+            tags: [], 
+            order: 0,
         });
+
+        // Log
+        await ctx.runMutation(internal.activities.log, {
+            projectId: args.projectId,
+            action: "task_created",
+            entityId: taskId,
+            entityName: args.title,
+            userId: user._id,
+        });
+
+        return taskId;
     },
 });
 
@@ -67,9 +83,59 @@ export const update = mutation({
     },
     handler: async (ctx, args) => {
         const user = await isAuthenticated(ctx);
-        // Contract: "Clients are Read-Only for Tasks in Phase 1."
-        if (user.role !== "admin") throw new Error("Admin only (Phase 1)");
+        const task = await ctx.db.get(args.taskId);
+        if (!task) throw new Error("Task not found");
+
+        const project = await ctx.db.get(task.projectId);
+        if (!project) throw new Error("Project not found");
+
+        const isOwner = project.clientId === user._id;
+        const isAdmin = user.role === "admin";
+        
+        if (!isAdmin && !isOwner) throw new Error("Unauthorized");
         
         await ctx.db.patch(args.taskId, args.patch);
+        
+        // Log
+        let action = "task_updated";
+        if (args.patch.status === "done" && task.status !== "done") {
+             action = "task_completed";
+        }
+        
+        await ctx.runMutation(internal.activities.log, {
+            projectId: task.projectId,
+            action: action,
+            entityId: args.taskId,
+            entityName: args.patch.title || task.title,
+            userId: user._id,
+        });
+    }
+});
+
+export const deleteTask = mutation({
+    args: { taskId: v.id("tasks") },
+    handler: async (ctx, args) => {
+        const user = await isAuthenticated(ctx);
+        const task = await ctx.db.get(args.taskId);
+        if (!task) throw new Error("Task not found");
+
+        const project = await ctx.db.get(task.projectId);
+        if (!project) throw new Error("Project not found");
+
+        const isOwner = project.clientId === user._id;
+        const isAdmin = user.role === "admin";
+
+        if (!isAdmin && !isOwner) throw new Error("Unauthorized");
+
+        await ctx.db.delete(args.taskId);
+
+        // Log
+        await ctx.runMutation(internal.activities.log, {
+            projectId: task.projectId,
+            action: "task_deleted",
+            entityId: args.taskId,
+            entityName: task.title,
+            userId: user._id,
+        });
     }
 });

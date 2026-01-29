@@ -1,14 +1,40 @@
 "use client";
 
-import { ConvexProvider, ConvexReactClient } from "convex/react";
-import { ReactNode } from "react";
+import { ReactNode, useEffect } from "react";
+import { ConvexReactClient, useConvexAuth, useMutation } from "convex/react";
+import { ClerkProvider, useAuth } from "@clerk/nextjs";
+import { ConvexProviderWithClerk } from "convex/react-clerk";
+import { api } from "../../convex/_generated/api";
 
 const convex = new ConvexReactClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
-export function ConvexClientProvider({ children }: { children: ReactNode }) {
+function UserSync({ children }: { children: ReactNode }) {
+  const { isAuthenticated } = useConvexAuth();
+  const storeUser = useMutation(api.users.store);
+  const setAdmin = useMutation(api.users.setAdmin);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      storeUser().then(() => {
+        // Auto-promote to admin in development
+        setAdmin().catch(console.error);
+      });
+    }
+  }, [isAuthenticated, storeUser, setAdmin]);
+
+  return <>{children}</>;
+}
+
+export default function ConvexClientProvider({
+  children,
+}: {
+  children: ReactNode;
+}) {
   return (
-    <ConvexProvider client={convex}>
-      {children}
-    </ConvexProvider>
+    <ClerkProvider>
+      <ConvexProviderWithClerk client={convex} useAuth={useAuth}>
+        <UserSync>{children}</UserSync>
+      </ConvexProviderWithClerk>
+    </ClerkProvider>
   );
 }

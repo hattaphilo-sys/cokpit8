@@ -5,20 +5,48 @@ import { motion } from "framer-motion";
 import { GlassCard } from "@/components/ui/glass-card";
 import { ProgressStepBar } from "@/components/ui/progress-step-bar";
 import { PaymentModal } from "@/components/ui/payment-modal";
-import { MOCK_PROJECT, MOCK_TASKS, MOCK_INVOICE, MOCK_FILES } from "@/lib/mock-data";
 import { AlertCircle, ArrowRight, Download, FileText, Upload } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import { useQuery, useConvexAuth } from "convex/react";
+import { api } from "../../../../convex/_generated/api";
+import { Id } from "../../../../convex/_generated/dataModel";
+import { RedirectToSignIn } from "@clerk/nextjs";
 
 export default function PortalHomePage() {
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const params = useParams();
-  const projectId = params.projectId as string;
+  const projectId = params.projectId as Id<"projects">;
+  
+  const { isAuthenticated, isLoading } = useConvexAuth();
+  
+  // Convex IDs are typically 32-character strings (base32-ish)
+  const isValidId = (id: string) => /^[a-z0-9]{32}$/i.test(id) || id.length >= 20; // Loose check but enough to skip "proj_1"
+  const isIdValid = projectId && isValidId(projectId);
+
+  // Data Fetching
+  const project = useQuery(api.projects.get, isAuthenticated && isIdValid ? { projectId } : "skip");
+  const tasks = useQuery(api.tasks.list, isAuthenticated && isIdValid ? { projectId } : "skip") || [];
+  const files = useQuery(api.files.list, isAuthenticated && isIdValid ? { projectId } : "skip") || [];
+  const pendingInvoice = useQuery(api.invoices.getPending, isAuthenticated && isIdValid ? { projectId } : "skip");
+  
+  if (isLoading) return <div className="text-white">Loading...</div>;
+  if (!isAuthenticated) return <RedirectToSignIn />;
+
+  if (!isIdValid) return (
+    <div className="min-h-screen flex flex-col items-center justify-center text-white space-y-4">
+      <h2 className="text-2xl font-light">Invalid Project ID</h2>
+      <p className="text-white/40">The project ID &quot;{projectId}&quot; is not a valid reference.</p>
+      <Link href="/admin/dashboard" className="text-blue-400 hover:underline">Go to Dashboard</Link>
+    </div>
+  );
+
+  if (!project) return <div className="text-white">Loading Project...</div>;
 
   // Filter data
-  const recentTasks = MOCK_TASKS.slice(0, 3);
-  const recentArtifacts = MOCK_FILES.filter(f => f.category === "artifact").slice(0, 2);
-  const recentSharedFiles = MOCK_FILES.filter(f => f.category === "shared_file").slice(0, 3);
+  const recentTasks = tasks.slice(0, 3);
+  const recentArtifacts = files.filter(f => f.category === "artifact").slice(0, 2);
+  const recentSharedFiles = files.filter(f => f.category === "shared_file").slice(0, 3);
 
   // Helper function to format file size
   const formatFileSize = (bytes: number) => {
@@ -30,7 +58,7 @@ export default function PortalHomePage() {
   return (
     <div className="space-y-8">
       {/* Payment Alert Banner */}
-      {MOCK_PROJECT.isPaymentPending && (
+      {project.isPaymentPending && pendingInvoice && (
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -45,7 +73,7 @@ export default function PortalHomePage() {
                     Payment Required
                   </p>
                   <p className="text-white/60 text-xs">
-                    An invoice of ¥{MOCK_INVOICE.amount.toLocaleString()} is pending.
+                    An invoice of ¥{pendingInvoice.amount.toLocaleString()} is pending.
                   </p>
                 </div>
               </div>
@@ -69,14 +97,14 @@ export default function PortalHomePage() {
         <GlassCard className="p-8 md:p-12" neon>
           <div className="mb-8">
             <h1 className="text-3xl md:text-4xl font-light text-white mb-3 tracking-wide">
-              {MOCK_PROJECT.title}
+              {project.title}
             </h1>
             <p className="text-white/50 text-sm uppercase tracking-[0.2em] font-mono">
-              Your Journey — Phase {["hearing", "concept", "wireframe", "design", "delivery"].indexOf(MOCK_PROJECT.status) + 1} of 5
+              Your Journey — Phase {["hearing", "concept", "wireframe", "design", "delivery"].indexOf(project.status) + 1} of 5
             </p>
           </div>
           
-          <ProgressStepBar currentStatus={MOCK_PROJECT.status} />
+          <ProgressStepBar currentStatus={project.status} />
         </GlassCard>
       </motion.div>
 
@@ -214,24 +242,24 @@ export default function PortalHomePage() {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <span className="text-white/60 text-sm">Total Tasks</span>
-                <span className="text-white font-semibold">{MOCK_TASKS.length}</span>
+                <span className="text-white font-semibold">{tasks.length}</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-white/60 text-sm">Completed</span>
                 <span className="text-green-400 font-semibold">
-                  {MOCK_TASKS.filter(t => t.status === "done").length}
+                  {tasks.filter(t => t.status === "done").length}
                 </span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-white/60 text-sm">Deliverables</span>
                 <span className="text-purple-400 font-semibold">
-                  {MOCK_FILES.filter(f => f.category === "artifact").length}
+                  {files.filter(f => f.category === "artifact").length}
                 </span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-white/60 text-sm">Shared Files</span>
                 <span className="text-cyan-400 font-semibold">
-                  {MOCK_FILES.filter(f => f.category === "shared_file").length}
+                  {files.filter(f => f.category === "shared_file").length}
                 </span>
               </div>
               
@@ -252,9 +280,9 @@ export default function PortalHomePage() {
       <PaymentModal
         isOpen={isPaymentModalOpen}
         onClose={() => setIsPaymentModalOpen(false)}
-        amount={MOCK_INVOICE.amount}
-        currency={MOCK_INVOICE.currency}
-        projectTitle={MOCK_PROJECT.title}
+        amount={pendingInvoice?.amount || 0}
+        currency={(pendingInvoice?.currency as "jpy"|"usd") || "jpy"}
+        projectTitle={project.title}
       />
     </div>
   );

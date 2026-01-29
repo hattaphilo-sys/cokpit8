@@ -63,3 +63,15 @@ export const create = mutation({
         return invoiceId;
     }
 });
+
+export const getPending = query({
+    args: { projectId: v.id("projects") },
+    handler: async (ctx, args) => {
+        const invoice = await ctx.db
+            .query("invoices")
+            .withIndex("by_projectId", (q: any) => q.eq("projectId", args.projectId))
+            .filter((q) => q.eq(q.field("status"), "pending"))
+            .first();
+        return invoice;
+    }
+});
