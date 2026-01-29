@@ -6,7 +6,7 @@ import { useQuery, useConvexAuth } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
 import { RedirectToSignIn } from "@clerk/nextjs";
 import Link from "next/link";
-import { ArrowRight, Calendar, Users, FolderKanban } from "lucide-react";
+import { ArrowRight, Calendar, FolderKanban } from "lucide-react";
 
 export default function AllProjectsPage() {
   const { isAuthenticated, isLoading } = useConvexAuth();
